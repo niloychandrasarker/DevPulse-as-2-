@@ -2,7 +2,7 @@
 
 export default defineConfig({
   entry: ["src/server.ts"],
-  format: ["esm"],
+  format: ["cjs"],
   target: "esnext",
   outDir: "dist",
   clean: true,

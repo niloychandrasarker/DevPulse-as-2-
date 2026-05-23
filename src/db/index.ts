@@ -1,7 +1,13 @@
 import { Pool } from "pg";
 import config from "../config";
+
+if (!config.dbUrl) {
+  throw new Error("Missing DB_URL (or DATABASE_URL) environment variable");
+}
+
 export const pool = new Pool({
   connectionString: config.dbUrl,
+  ssl: config.isProd ? { rejectUnauthorized: false } : undefined,
 });
 
 export const initDB = async () => {

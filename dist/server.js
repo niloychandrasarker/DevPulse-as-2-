@@ -1,41 +1,5 @@
-"use strict";
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/server.ts
-var server_exports = {};
-__export(server_exports, {
-  default: () => server_default
-});
-module.exports = __toCommonJS(server_exports);
-
 // src/app.ts
-var import_express3 = __toESM(require("express"));
+import express from "express";
 
 // src/globalerrorhandler/globalErrorHandler.ts
 var globalErrorHandler = (err, req, res, next) => {
@@ -47,23 +11,28 @@ var globalErrorHandler = (err, req, res, next) => {
 var globalErrorHandler_default = globalErrorHandler;
 
 // src/module/auth/auth.route.ts
-var import_express = require("express");
+import { Router } from "express";
 
 // src/config/index.ts
-var import_dotenv = __toESM(require("dotenv"));
-var import_path = __toESM(require("path"));
-import_dotenv.default.config({ path: import_path.default.join(process.cwd(), ".env") });
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 var config = {
-  dbUrl: process.env.DB_URL,
+  dbUrl: process.env.DB_URL ?? process.env.DATABASE_URL,
   port: process.env.PORT || "5000",
-  jwtSecret: process.env.JWT_SECRET
+  jwtSecret: process.env.JWT_SECRET,
+  isProd: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL)
 };
 var config_default = config;
 
 // src/db/index.ts
-var import_pg = require("pg");
-var pool = new import_pg.Pool({
-  connectionString: config_default.dbUrl
+import { Pool } from "pg";
+if (!config_default.dbUrl) {
+  throw new Error("Missing DB_URL (or DATABASE_URL) environment variable");
+}
+var pool = new Pool({
+  connectionString: config_default.dbUrl,
+  ssl: config_default.isProd ? { rejectUnauthorized: false } : void 0
 });
 var initDB = async () => {
   try {
@@ -93,11 +62,11 @@ var initDB = async () => {
 };
 
 // src/module/auth/auth.service.ts
-var import_bcrypt = __toESM(require("bcrypt"));
-var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 var signUpdb = async (payload) => {
   const { name, email, password, role } = payload;
-  const hashPassword = await import_bcrypt.default.hash(password, 10);
+  const hashPassword = await bcrypt.hash(password, 10);
   const result = await pool.query(
     `
     insert into users (name, email, password, role)
@@ -116,7 +85,7 @@ var loginDb = async (payload) => {
     throw new Error("Invalid credentials");
   }
   const user = userData.rows[0];
-  const isMatch = await import_bcrypt.default.compare(password, user.password);
+  const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new Error("Invalid credentials");
   }
@@ -127,7 +96,7 @@ var loginDb = async (payload) => {
     email: user.email,
     role: user.role
   };
-  const accessToken = import_jsonwebtoken.default.sign(jwtPayload, config_default.jwtSecret, {
+  const accessToken = jwt.sign(jwtPayload, config_default.jwtSecret, {
     expiresIn: "1h"
   });
   return {
@@ -194,13 +163,13 @@ var authController = {
 };
 
 // src/module/auth/auth.route.ts
-var router = (0, import_express.Router)();
+var router = Router();
 router.post("/signup", authController.signUpController);
 router.post("/login", authController.loginController);
 var authRoute = router;
 
 // src/module/Issue/issue.router.ts
-var import_express2 = require("express");
+import { Router as Router2 } from "express";
 
 // src/module/Issue/issue.service.ts
 var createIssueDB = async (payload) => {
@@ -445,7 +414,7 @@ var issueController = {
 };
 
 // src/midleware/authMidleware.ts
-var import_jsonwebtoken2 = __toESM(require("jsonwebtoken"));
+import jwt2 from "jsonwebtoken";
 var authMiddleware = (...roles) => {
   return async (req, res, next) => {
     try {
@@ -458,7 +427,7 @@ var authMiddleware = (...roles) => {
           data: null
         });
       }
-      const decoded = import_jsonwebtoken2.default.verify(
+      const decoded = jwt2.verify(
         token,
         config_default.jwtSecret
       );
@@ -497,7 +466,7 @@ var authMiddleware = (...roles) => {
 var authMidleware_default = authMiddleware;
 
 // src/module/Issue/issue.router.ts
-var router2 = (0, import_express2.Router)();
+var router2 = Router2();
 router2.post("/", issueController.createIssue);
 router2.get("/", issueController.getAllIssues);
 router2.get("/:id", issueController.getSingleIssue);
@@ -510,10 +479,10 @@ router2.delete(
 var issueRoute = router2;
 
 // src/app.ts
-var app = (0, import_express3.default)();
-app.use(import_express3.default.json());
-app.use(import_express3.default.text());
-app.use(import_express3.default.urlencoded({ extended: true }));
+var app = express();
+app.use(express.json());
+app.use(express.text());
+app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.send("TypeScript Backend Running");
 });
@@ -533,4 +502,7 @@ var main = () => {
 };
 main();
 var server_default = app_default;
+export {
+  server_default as default
+};
 //# sourceMappingURL=server.js.map

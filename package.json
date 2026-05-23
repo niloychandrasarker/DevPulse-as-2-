@@ -2,6 +2,7 @@
   "name": "assignment-02_devpulse",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "./dist/server.js",
   "scripts": {
     "start": "node dist/server.js",

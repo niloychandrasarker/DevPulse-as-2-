@@ -11,11 +11,11 @@ const signUpdb = async (payload: IUser) => {
 
   const result = await pool.query(
     `
-    insert into users (name, email, password, role) values ($1, $2, $3, $4) returning *`,
+    insert into users (name, email, password, role)
+    values ($1, $2, $3, $4)
+    returning id, name, email, role, created_at, updated_at`,
     [name, email, hashPassword, role],
   );
-
-  delete result.rows[0].password;
 
   return result.rows[0];
 };
